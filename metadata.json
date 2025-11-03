@@ -1,0 +1,5 @@
+{
+  "name": "R2R Performance Dashboard",
+  "description": "A dashboard to track a coffee import/e-commerce startup's financial performance against its budget, monitor key metrics, and align with OKRs. It includes AI-powered analysis to provide actionable insights.",
+  "requestFramePermissions": []
+}
