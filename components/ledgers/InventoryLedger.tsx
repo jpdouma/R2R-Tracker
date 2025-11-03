@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useMemo } from 'react';
 import type { InventoryLedgerItem, Currency } from '../../types';
 import { useDataContext } from '../../contexts/DataContext';
@@ -192,7 +191,7 @@ const InventoryLedger: React.FC<InventoryLedgerProps> = () => {
 
                                         {activeTab !== 'Inflow' && (<>
                                             <td className="p-1"><input type="text" disabled={editedData.type === 'In'} value={editedData.destination || ''} onChange={e => handleEditChange('destination', e.target.value)} className="bg-brand-surface p-2 rounded-md w-28 text-xs disabled:opacity-50"/></td>
-                                            <td className="p-1"><select disabled={editedData.type === 'In'} value={editedData.channel || ''} onChange={e => handleEditChange('channel', e.target.value)} className="bg-brand-surface p-2 rounded-md w-full text-xs disabled:opacity-50"><option value="">N/A</option><option>Sales - Online</option><option>Sales - Wholesale</option><option>Sales - HORECA</option></select></td>
+                                            <td className="p-1"><select disabled={editedData.type === 'In'} value={editedData.channel || ''} onChange={e => handleEditChange('channel', e.target.value)} className="bg-brand-surface p-2 rounded-md w-full text-xs disabled:opacity-50"><option value="">N/A</option><option>Sales - Online</option><option>Sales - Retail</option><option>Sales - HORECA</option></select></td>
                                         </>)}
                                         
                                         <td className="p-1 text-center">

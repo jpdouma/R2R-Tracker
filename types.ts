@@ -94,7 +94,7 @@ export interface AllAssumptions {
         cagr: number;
         supportOptInRate: number;
     };
-    wholesale: {
+    retail: {
         cagr: number;
         discountPercentage: number;
         assumedStartingOrderKg: number;
@@ -119,7 +119,7 @@ export interface AllAssumptions {
 
 export interface FinancialData {
     incomeStatement: {
-        revenue: { online: number, wholesale: number, horeca: number, total: number };
+        revenue: { online: number, retail: number, horeca: number, total: number };
         cogs: number;
         grossProfit: number;
         operatingExpenses: {
@@ -189,7 +189,7 @@ export interface FinancialData {
     };
     mass: {
         online: number;
-        wholesale: number;
+        retail: number;
         horeca: number;
         total: number;
     };
@@ -251,7 +251,7 @@ export interface SalesLedgerEntry {
     sku: string;
     units: number;
     unitPrice: number;
-    channel: 'Sales - Online' | 'Sales - Wholesale' | 'Sales - HORECA';
+    channel: 'Sales - Online' | 'Sales - Retail' | 'Sales - HORECA';
     customerId: string;
     supportDonation?: number;
 }

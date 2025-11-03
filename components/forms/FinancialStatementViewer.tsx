@@ -33,7 +33,8 @@ const FinancialStatementViewer: React.FC = () => {
             const CF = summary.cashFlow;
 
             // IS Recalculations
-            IS.revenue.total = IS.revenue.online + IS.revenue.wholesale + IS.revenue.horeca;
+            // FIX: Replaced 'wholesale' with 'retail' to match FinancialData type
+            IS.revenue.total = IS.revenue.online + IS.revenue.retail + IS.revenue.horeca;
             IS.grossProfit = IS.revenue.total - IS.cogs;
             IS.operatingExpenses.total = Object.values(IS.operatingExpenses).reduce((s, v) => s + (typeof v === 'number' ? v : 0), 0) - IS.operatingExpenses.total;
             IS.operatingIncome = IS.grossProfit - IS.operatingExpenses.total;
@@ -165,7 +166,8 @@ const FinancialStatementViewer: React.FC = () => {
         <tbody>
             {renderRow("Revenue", 'incomeStatement', '', false, { isHeader: true })}
             {renderRow("Sales - Online", 'incomeStatement', "revenue.online", true, { isSub: true })}
-            {renderRow("Sales - Wholesale", 'incomeStatement', "revenue.wholesale", true, { isSub: true })}
+            {/* FIX: Replaced 'wholesale' with 'retail' to match FinancialData type */}
+            {renderRow("Sales - Retail", 'incomeStatement', "revenue.retail", true, { isSub: true })}
             {renderRow("Sales - HORECA", 'incomeStatement', "revenue.horeca", true, { isSub: true })}
             {renderRow("Total Revenue", 'incomeStatement', "revenue.total", false, { isBold: true })}
             {renderRow("Cost of Goods Sold (COGS)", 'incomeStatement', "cogs", true)}

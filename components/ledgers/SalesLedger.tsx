@@ -1,4 +1,3 @@
-
 import React from 'react';
 import type { SalesLedgerEntry } from '../../types';
 import { useDataContext } from '../../contexts/DataContext';
@@ -83,7 +82,7 @@ const SalesLedger: React.FC<SalesLedgerProps> = () => {
                                     <td className="p-1 w-32"><input type="number" value={editedData.unitPrice} onChange={e => handleEditChange('unitPrice', parseFloat(e.target.value) || 0)} className="bg-brand-surface p-2 rounded-md w-full text-xs outline-none focus:ring-1 focus:ring-brand-primary text-right"/></td>
                                     <td className="p-1 w-48">
                                         <select value={editedData.channel} onChange={e => handleEditChange('channel', e.target.value as SalesLedgerEntry['channel'])} className="bg-brand-surface p-2 rounded-md w-full text-xs outline-none focus:ring-1 focus:ring-brand-primary">
-                                            <option>Sales - Online</option><option>Sales - Wholesale</option><option>Sales - HORECA</option>
+                                            <option>Sales - Online</option><option>Sales - Retail</option><option>Sales - HORECA</option>
                                         </select>
                                     </td>
                                     <td className="p-1 w-32"><input type="number" value={editedData.supportDonation || ''} onChange={e => handleEditChange('supportDonation', parseFloat(e.target.value) || 0)} placeholder="N/A" className="bg-brand-surface p-2 rounded-md w-full text-xs outline-none focus:ring-1 focus:ring-brand-primary text-right"/></td>

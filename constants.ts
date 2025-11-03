@@ -77,7 +77,7 @@ export const INITIAL_ASSUMPTIONS: AllAssumptions = {
     webshop: {
         cac: 15, aovInclVat: 30, aovExclVat: 27.5, avgOrderMass: 0.75, cagr: 50, supportOptInRate: 10
     },
-    wholesale: { cagr: 30, discountPercentage: 20, assumedStartingOrderKg: 10, startingAccounts: 5, avgSalesPerAccountYear: 5000 },
+    retail: { cagr: 30, discountPercentage: 20, assumedStartingOrderKg: 10, startingAccounts: 5, avgSalesPerAccountYear: 5000 },
     horeca: { cagr: 20, discountPercentage: 25, assumedStartingOrderKg: 20, startingAccounts: 2 },
     company: {
         owners: { dividendsPayoutRatio: 50 },
@@ -102,17 +102,17 @@ export const INITIAL_ACTIVITY_LOG: ActivityLogEntry[] = [];
 
 const getEmptyFinancialData = (): FinancialData => {
     return JSON.parse(JSON.stringify({
-        incomeStatement: { revenue: { online: 0, wholesale: 0, horeca: 0, total: 0 }, cogs: 0, grossProfit: 0, operatingExpenses: { marketingAndSales: 0, logisticsAndDistribution: 0, salariesAndWages: 0, rentAndUtilities: 0, techAndSoftware: 0, professionalFees: 0, depreciation: 0, other: 0, total: 0 }, operatingIncome: 0, interestExpense: 0, incomeBeforeTaxes: 0, incomeTaxExpense: 0, netIncome: 0 },
+        incomeStatement: { revenue: { online: 0, retail: 0, horeca: 0, total: 0 }, cogs: 0, grossProfit: 0, operatingExpenses: { marketingAndSales: 0, logisticsAndDistribution: 0, salariesAndWages: 0, rentAndUtilities: 0, techAndSoftware: 0, professionalFees: 0, depreciation: 0, other: 0, total: 0 }, operatingIncome: 0, interestExpense: 0, incomeBeforeTaxes: 0, incomeTaxExpense: 0, netIncome: 0 },
         cashFlow: { operatingActivities: { netIncome: 0, depreciation: 0, changeInAccountsReceivable: 0, changeInInventory: 0, changeInAccountsPayable: 0, changeInAccruedExpenses: 0, changeInVatPayable: 0, changeInDeferredTaxes: 0, netCash: 0 }, investingActivities: { purchaseOfFixedAssets: 0, capitalizedStartupCosts: 0, netCash: 0 }, financingActivities: { netIncreaseFromBorrowings: 0, repaymentOfLoans: 0, equityContributions: 0, dividendsPaid: 0, netCash: 0 }, netChangeInCash: 0, cashAtBeginningOfYear: 0, cashAtEndOfYear: 0 },
         balanceSheet: { assets: { current: { cash: 0, accountsReceivable: 0, inventory: 0, total: 0 }, nonCurrent: { fixedAssets: 0, intangibleAssets: 0, accumulatedDepreciation: 0, netBookValue: 0, other: 0, total: 0 }, total: 0 }, liabilitiesAndEquity: { liabilities: { current: { accountsPayable: 0, shortTermDebt: 0, accruedExpenses: 0, vatPayable: 0, deferredTaxes: 0, dividendsPayable: 0, total: 0 }, nonCurrent: { longTermDebt: 0, total: 0 }, total: 0 }, equity: { shareCapital: 0, retainedEarnings: 0, total: 0 }, total: 0 } },
-        mass: { online: 0, wholesale: 0, horeca: 0, total: 0 }
+        mass: { online: 0, retail: 0, horeca: 0, total: 0 }
     }));
 };
 
 const INCOME_STATEMENT_DATA = {
     revenue: {
         online: [22931, 660418, 1073180, 1444665, 1934819, 2579759],
-        wholesale: [52633, 680856, 733962, 791212, 852926, 919454],
+        retail: [52633, 680856, 733962, 791212, 852926, 919454],
         horeca: [4033, 49754, 51147, 52579, 54051, 55565],
     },
     cogs: [2751, 442001, 579613, 706787, 869672, 1078785],
@@ -172,7 +172,7 @@ const generateInitialBudgetFromData = (): DetailedFinancialData => {
         // --- Populate Income Statement ---
         const IS = yearSummary.incomeStatement;
         IS.revenue.online = INCOME_STATEMENT_DATA.revenue.online[i];
-        IS.revenue.wholesale = INCOME_STATEMENT_DATA.revenue.wholesale[i];
+        IS.revenue.retail = INCOME_STATEMENT_DATA.revenue.retail[i];
         IS.revenue.horeca = INCOME_STATEMENT_DATA.revenue.horeca[i];
         IS.cogs = INCOME_STATEMENT_DATA.cogs[i];
         Object.assign(IS.operatingExpenses, {
@@ -232,7 +232,7 @@ const generateInitialBudgetFromData = (): DetailedFinancialData => {
         
         // --- Calculate Totals & Links ---
         // IS
-        IS.revenue.total = IS.revenue.online + IS.revenue.wholesale + IS.revenue.horeca;
+        IS.revenue.total = IS.revenue.online + IS.revenue.retail + IS.revenue.horeca;
         IS.grossProfit = IS.revenue.total - IS.cogs;
         IS.operatingExpenses.total = Object.values(IS.operatingExpenses).reduce((s, v) => s + v, 0) - IS.operatingExpenses.total;
         IS.operatingIncome = IS.grossProfit - IS.operatingExpenses.total;

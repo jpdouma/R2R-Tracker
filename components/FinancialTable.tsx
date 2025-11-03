@@ -47,7 +47,8 @@ const FinancialTable: React.FC<FinancialTableProps> = ({ budget, actual, granula
           <>
             <SectionHeader title="Revenue" />
             <TableRow label="Sales - Online" budget={budget.incomeStatement.revenue.online} actual={actual.incomeStatement.revenue.online} indent />
-            <TableRow label="Sales - Wholesale" budget={budget.incomeStatement.revenue.wholesale} actual={actual.incomeStatement.revenue.wholesale} indent />
+            {/* FIX: Changed 'wholesale' to 'retail' to match FinancialData type */}
+            <TableRow label="Sales - Retail" budget={budget.incomeStatement.revenue.retail} actual={actual.incomeStatement.revenue.retail} indent />
             <TableRow label="Sales - HORECA" budget={budget.incomeStatement.revenue.horeca} actual={actual.incomeStatement.revenue.horeca} indent />
             <TableRow label="Total Revenue" budget={budget.incomeStatement.revenue.total} actual={actual.incomeStatement.revenue.total} bold />
             <TableRow label="Cost of Goods Sold (COGS)" budget={budget.incomeStatement.cogs} actual={actual.incomeStatement.cogs} />

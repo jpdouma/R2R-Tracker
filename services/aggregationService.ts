@@ -4,10 +4,10 @@ import { YEARS, MONTH_NAMES } from '../constants';
 const getEmptyFinancialData = (): FinancialData => {
     // A deep copy is essential here to prevent shared state issues.
     return JSON.parse(JSON.stringify({
-        incomeStatement: { revenue: { online: 0, wholesale: 0, horeca: 0, total: 0 }, cogs: 0, grossProfit: 0, operatingExpenses: { marketingAndSales: 0, logisticsAndDistribution: 0, salariesAndWages: 0, rentAndUtilities: 0, techAndSoftware: 0, professionalFees: 0, depreciation: 0, other: 0, total: 0 }, operatingIncome: 0, interestExpense: 0, incomeBeforeTaxes: 0, incomeTaxExpense: 0, netIncome: 0 },
+        incomeStatement: { revenue: { online: 0, retail: 0, horeca: 0, total: 0 }, cogs: 0, grossProfit: 0, operatingExpenses: { marketingAndSales: 0, logisticsAndDistribution: 0, salariesAndWages: 0, rentAndUtilities: 0, techAndSoftware: 0, professionalFees: 0, depreciation: 0, other: 0, total: 0 }, operatingIncome: 0, interestExpense: 0, incomeBeforeTaxes: 0, incomeTaxExpense: 0, netIncome: 0 },
         cashFlow: { operatingActivities: { netIncome: 0, depreciation: 0, changeInAccountsReceivable: 0, changeInInventory: 0, changeInAccountsPayable: 0, changeInAccruedExpenses: 0, changeInVatPayable: 0, changeInDeferredTaxes: 0, netCash: 0 }, investingActivities: { purchaseOfFixedAssets: 0, capitalizedStartupCosts: 0, netCash: 0 }, financingActivities: { netIncreaseFromBorrowings: 0, repaymentOfLoans: 0, equityContributions: 0, dividendsPaid: 0, netCash: 0 }, netChangeInCash: 0, cashAtBeginningOfYear: 0, cashAtEndOfYear: 0 },
         balanceSheet: { assets: { current: { cash: 0, accountsReceivable: 0, inventory: 0, total: 0 }, nonCurrent: { fixedAssets: 0, intangibleAssets: 0, accumulatedDepreciation: 0, netBookValue: 0, other: 0, total: 0 }, total: 0 }, liabilitiesAndEquity: { liabilities: { current: { accountsPayable: 0, shortTermDebt: 0, accruedExpenses: 0, vatPayable: 0, deferredTaxes: 0, dividendsPayable: 0, total: 0 }, nonCurrent: { longTermDebt: 0, total: 0 }, total: 0 }, equity: { shareCapital: 0, retainedEarnings: 0, total: 0 }, total: 0 } },
-        mass: { online: 0, wholesale: 0, horeca: 0, total: 0 }
+        mass: { online: 0, retail: 0, horeca: 0, total: 0 }
     }));
 };
 
@@ -46,7 +46,7 @@ export const aggregateActualsFromLedgers = (ledgers: LedgerData, assumptions: Al
             const weekData = detailedData[year].months[month].weeks[week];
             
             if (sale.channel === 'Sales - Online') weekData.incomeStatement.revenue.online += saleTotal;
-            else if (sale.channel === 'Sales - Wholesale') weekData.incomeStatement.revenue.wholesale += saleTotal;
+            else if (sale.channel === 'Sales - Retail') weekData.incomeStatement.revenue.retail += saleTotal;
             else if (sale.channel === 'Sales - HORECA') weekData.incomeStatement.revenue.horeca += saleTotal;
         }
     });
@@ -108,7 +108,7 @@ export const aggregateActualsFromLedgers = (ledgers: LedgerData, assumptions: Al
                 const monthSummary = detailedData[year].months[m].summary;
                 
                 // Recalculate totals for the week
-                weekData.incomeStatement.revenue.total = weekData.incomeStatement.revenue.online + weekData.incomeStatement.revenue.wholesale + weekData.incomeStatement.revenue.horeca;
+                weekData.incomeStatement.revenue.total = weekData.incomeStatement.revenue.online + weekData.incomeStatement.revenue.retail + weekData.incomeStatement.revenue.horeca;
                 weekData.incomeStatement.grossProfit = weekData.incomeStatement.revenue.total - weekData.incomeStatement.cogs;
                 const opEx = weekData.incomeStatement.operatingExpenses;
                 opEx.total = opEx.marketingAndSales + opEx.logisticsAndDistribution + opEx.salariesAndWages + opEx.rentAndUtilities + opEx.techAndSoftware + opEx.professionalFees + opEx.depreciation + opEx.other;

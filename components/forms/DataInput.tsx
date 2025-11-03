@@ -123,12 +123,13 @@ const DataInput: React.FC<DataInputProps> = ({ onOpenScenarioPlanner }) => {
                 <AssumptionInput label="Compound Annual Growth Rate (CAGR)" value={a.webshop.cagr} onChange={v => handleAssumptionChange('webshop', 'cagr', v)} unit="%" />
                 <AssumptionInput label="Support Opt-in Rate" value={a.webshop.supportOptInRate} onChange={v => handleAssumptionChange('webshop', 'supportOptInRate', v)} unit="%" />
 
-                <h5 className="font-semibold text-brand-text-primary my-2 pt-2 border-t border-brand-border">Wholesale</h5>
-                <AssumptionInput label="Compounded annual growth rate (CAGR)" value={a.wholesale.cagr} onChange={v => handleAssumptionChange('wholesale', 'cagr', v)} unit="%" />
-                <AssumptionInput label="Wholesale discount" value={a.wholesale.discountPercentage} onChange={v => handleAssumptionChange('wholesale', 'discountPercentage', v)} unit="%" />
-                <AssumptionInput label="Assumed starting order" value={a.wholesale.assumedStartingOrderKg} onChange={v => handleAssumptionChange('wholesale', 'assumedStartingOrderKg', v)} unit="kilo(s)" />
-                <AssumptionInput label="Starting number of accounts" value={a.wholesale.startingAccounts} onChange={v => handleAssumptionChange('wholesale', 'startingAccounts', v)} />
-                <AssumptionInput label="Average sales per account per year" value={a.wholesale.avgSalesPerAccountYear} onChange={v => handleAssumptionChange('wholesale', 'avgSalesPerAccountYear', v)} unit="€" />
+                {/* FIX: Changed 'wholesale' to 'retail' to match AllAssumptions type */}
+                <h5 className="font-semibold text-brand-text-primary my-2 pt-2 border-t border-brand-border">Retail</h5>
+                <AssumptionInput label="Compounded annual growth rate (CAGR)" value={a.retail.cagr} onChange={v => handleAssumptionChange('retail', 'cagr', v)} unit="%" />
+                <AssumptionInput label="Retail discount" value={a.retail.discountPercentage} onChange={v => handleAssumptionChange('retail', 'discountPercentage', v)} unit="%" />
+                <AssumptionInput label="Assumed starting order" value={a.retail.assumedStartingOrderKg} onChange={v => handleAssumptionChange('retail', 'assumedStartingOrderKg', v)} unit="kilo(s)" />
+                <AssumptionInput label="Starting number of accounts" value={a.retail.startingAccounts} onChange={v => handleAssumptionChange('retail', 'startingAccounts', v)} />
+                <AssumptionInput label="Average sales per account per year" value={a.retail.avgSalesPerAccountYear} onChange={v => handleAssumptionChange('retail', 'avgSalesPerAccountYear', v)} unit="€" />
 
                 <h5 className="font-semibold text-brand-text-primary my-2 pt-2 border-t border-brand-border">Horeca</h5>
                  <AssumptionInput label="Compounded annual growth rate (CAGR)" value={a.horeca.cagr} onChange={v => handleAssumptionChange('horeca', 'cagr', v)} unit="%" />

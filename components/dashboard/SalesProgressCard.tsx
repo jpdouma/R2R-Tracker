@@ -1,16 +1,16 @@
 import React, { useState, useMemo } from 'react';
 import { useDataContext } from '../../contexts/DataContext';
-import { ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Bar, Line } from 'recharts';
+import { ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Bar } from 'recharts';
 import { MONTH_NAMES } from '../../constants';
-import type { Granularity } from '../../types';
 
-const getWeek = (d: Date) => {
-  d = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
-  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7));
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
-  const weekNo = Math.ceil((((d.valueOf() - yearStart.valueOf()) / 86400000) + 1)/7);
-  return weekNo;
-}
+const getModelWeekAndYear = (d: Date) => {
+    const year = d.getUTCFullYear();
+    const month = d.getUTCMonth(); // 0-11
+    const date = d.getUTCDate();
+    const weekOfMonth = Math.min(4, Math.floor((date - 1) / 7) + 1);
+    const weekOfYear = month * 4 + weekOfMonth; // This gives week 1-48
+    return { week: weekOfYear, year: year };
+};
 
 const getQuarter = (d: Date) => Math.floor(d.getUTCMonth() / 3) + 1;
 
@@ -31,15 +31,14 @@ const SummaryKpi: React.FC<{ title: string; value: string; subValue?: string, su
 
 const CustomTooltip: React.FC<any> = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
-        const realized = payload.find(p => p.dataKey === 'realized');
-        const pipeline = payload.find(p => p.dataKey === 'pipeline');
-        const budget = payload.find(p => p.dataKey === 'budget');
         return (
             <div className="bg-brand-surface p-4 border border-brand-border rounded-lg shadow-lg text-sm">
                 <p className="font-bold text-brand-text-primary mb-2">{label}</p>
-                {realized && <p style={{ color: realized.color }}>Realized: {formatCurrency(realized.value, false)}</p>}
-                {pipeline && <p style={{ color: pipeline.color }}>Pipeline: {formatCurrency(pipeline.value, false)}</p>}
-                {budget && <p style={{ color: '#9CA3AF' }}>Budget: {formatCurrency(budget.value, false)}</p>}
+                {payload.map((pld: any) => (
+                    <p key={pld.dataKey} style={{ color: pld.fill }}>
+                        {pld.name}: {formatCurrency(pld.value, false)}
+                    </p>
+                ))}
             </div>
         );
     }
@@ -50,13 +49,20 @@ const CustomTooltip: React.FC<any> = ({ active, payload, label }) => {
 type Interval = 'Weekly' | 'Monthly' | 'Quarterly' | 'Yearly';
 
 const SalesProgressCard: React.FC = () => {
-    const { salesLedgerData, plannedBudget, selectedYear } = useDataContext();
+    const { salesLedgerData, plannedBudget } = useDataContext();
     
-    const [period, setPeriod] = useState({
-        start: `${selectedYear}-01-01`,
-        end: `${selectedYear}-12-31`,
-    });
-    const [interval, setInterval] = useState<Interval>('Monthly');
+    const getInitialPeriod = () => {
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(endDate.getDate() - 28);
+        return {
+            start: startDate.toISOString().split('T')[0],
+            end: endDate.toISOString().split('T')[0],
+        };
+    };
+
+    const [period, setPeriod] = useState(getInitialPeriod());
+    const [interval, setInterval] = useState<Interval>('Weekly');
 
     const handlePeriodChange = (field: 'start' | 'end', value: string) => {
         setPeriod(prev => ({ ...prev, [field]: value }));
@@ -66,106 +72,161 @@ const SalesProgressCard: React.FC = () => {
         const startDate = new Date(`${period.start}T00:00:00Z`);
         const endDate = new Date(`${period.end}T23:59:59Z`);
 
-        const relevantSales = salesLedgerData.filter(s => {
-            const orderDate = new Date(s.orderDate);
-            return orderDate >= startDate && orderDate <= endDate;
-        });
+        const data = new Map<string, {name: string, realized: number, pipeline: number, budgetOnline: number, budgetRetail: number, budgetHoreca: number}>();
 
-        const aggregated = relevantSales.reduce<Record<string, {name: string, realized: number, pipeline: number, budget: number}>>((acc, sale) => {
-            const orderDate = new Date(sale.orderDate + 'T00:00:00Z');
-            const year = orderDate.getUTCFullYear();
-            const month = orderDate.getUTCMonth() + 1;
-            const week = getWeek(orderDate);
-            const quarter = getQuarter(orderDate);
+        // 1. Populate with budget data for the selected range and interval
+        let currentDate = new Date(startDate);
+        while(currentDate <= endDate) {
+            const year = currentDate.getUTCFullYear();
+            const month = currentDate.getUTCMonth() + 1;
+            const quarter = getQuarter(currentDate);
 
             let key: string, name: string;
+            let budget = { online: 0, retail: 0, horeca: 0 };
+            let nextDate = new Date(currentDate);
+
             switch(interval) {
-                case 'Weekly':
-                    key = `${year}-W${week}`;
+                case 'Weekly': {
+                    const { week, year: weekYear } = getModelWeekAndYear(currentDate);
+                    key = `${weekYear}-W${week}`;
                     name = `W${week}`;
+
+                    const budgetYear = weekYear;
+                    const budgetMonth = Math.floor((week - 1) / 4) + 1;
+                    const budgetWeekOfMonth = ((week - 1) % 4) + 1;
+
+                    if (budgetYear < 2025 || (budgetYear === 2025 && budgetMonth !== 12)) {
+                        // No budget before Dec 2025
+                    } else {
+                        const yearBudget = plannedBudget[budgetYear];
+                        if(yearBudget?.months[budgetMonth]?.weeks[budgetWeekOfMonth]) {
+                            const wBudget = yearBudget.months[budgetMonth].weeks[budgetWeekOfMonth].incomeStatement.revenue;
+                            budget.online = wBudget.online;
+                            budget.retail = wBudget.retail;
+                            budget.horeca = wBudget.horeca;
+                        }
+                    }
+                    nextDate.setUTCDate(currentDate.getUTCDate() + 7);
                     break;
-                case 'Quarterly':
+                }
+                case 'Quarterly': {
                     key = `${year}-Q${quarter}`;
                     name = `Q${quarter}`;
+                    if (year < 2025 || (year === 2025 && quarter !== 4)) {
+                        // No budget
+                    } else {
+                        const startMonth = (quarter - 1) * 3 + 1;
+                        for(let i=startMonth; i < startMonth+3; i++){
+                            if (plannedBudget[year]?.months[i]) {
+                                const mBudget = plannedBudget[year].months[i].summary.incomeStatement.revenue;
+                                budget.online += mBudget.online;
+                                budget.retail += mBudget.retail;
+                                budget.horeca += mBudget.horeca;
+                            }
+                        }
+                    }
+                    nextDate.setUTCMonth(currentDate.getUTCMonth() + 3);
                     break;
-                case 'Yearly':
+                }
+                case 'Yearly': {
                     key = `${year}`;
                     name = `${year}`;
+                    if(plannedBudget[year]) {
+                        const yBudget = plannedBudget[year].summary.incomeStatement.revenue;
+                        budget.online = yBudget.online;
+                        budget.retail = yBudget.retail;
+                        budget.horeca = yBudget.horeca;
+                    }
+                    nextDate.setUTCFullYear(currentDate.getUTCFullYear() + 1);
                     break;
+                }
                 case 'Monthly':
-                default:
+                default: {
                     key = `${year}-${month}`;
-                    name = `${MONTH_NAMES[month-1]} ${year}`;
+                    name = `${MONTH_NAMES[month-1]}`;
+                    if (year < 2025 || (year === 2025 && month !== 12)) {
+                        // no budget
+                    } else if (plannedBudget[year]?.months[month]) {
+                        const mBudget = plannedBudget[year].months[month].summary.incomeStatement.revenue;
+                        budget.online = mBudget.online;
+                        budget.retail = mBudget.retail;
+                        budget.horeca = mBudget.horeca;
+                    }
+                    nextDate.setUTCMonth(currentDate.getUTCMonth() + 1);
                     break;
-            }
-
-            if (!acc[key]) {
-                acc[key] = { name, realized: 0, pipeline: 0, budget: 0 };
-            }
-
-            const saleTotal = sale.units * sale.unitPrice;
-            if (sale.invoicePaidDate) {
-                const paidDate = new Date(sale.invoicePaidDate);
-                if (paidDate >= startDate && paidDate <= endDate) {
-                    acc[key].realized += saleTotal;
-                } else {
-                    acc[key].pipeline += saleTotal;
                 }
-            } else {
-                acc[key].pipeline += saleTotal;
             }
-            return acc;
+            if(!data.has(key)) {
+                data.set(key, { 
+                    name, 
+                    realized: 0, 
+                    pipeline: 0, 
+                    budgetOnline: budget.online, 
+                    budgetRetail: budget.retail, 
+                    budgetHoreca: budget.horeca 
+                });
+            }
+            currentDate = nextDate;
+        }
 
-        }, {});
-        
-        // Add budget data
-        Object.keys(aggregated).forEach(key => {
-            const [yearStr, periodStr] = key.split('-');
-            const year = parseInt(yearStr);
+        // 2. Aggregate actual sales
+        salesLedgerData.forEach(s => {
+            const orderDate = new Date(s.orderDate);
+            if(orderDate >= startDate && orderDate <= endDate) {
+                const year = orderDate.getUTCFullYear();
+                const month = orderDate.getUTCMonth() + 1;
+                const quarter = getQuarter(orderDate);
 
-            if(plannedBudget[year]){
-                let budgetValue = 0;
-                 switch(interval) {
-                    case 'Weekly':
-                        // This is an approximation
-                        const weekNum = parseInt(periodStr.replace('W',''));
-                        const monthForWeek = Math.ceil(weekNum / 4.34);
-                        budgetValue = (plannedBudget[year].months[monthForWeek]?.summary.incomeStatement.revenue.total || 0) / 4.34;
+                let key: string;
+                switch(interval) {
+                    case 'Weekly': {
+                        const { week, year: weekYear } = getModelWeekAndYear(orderDate);
+                        key = `${weekYear}-W${week}`; 
                         break;
-                    case 'Quarterly':
-                        const q = parseInt(periodStr.replace('Q',''));
-                        const startMonth = (q - 1) * 3 + 1;
-                        for(let i=startMonth; i < startMonth+3; i++){
-                           budgetValue += plannedBudget[year].months[i]?.summary.incomeStatement.revenue.total || 0;
-                        }
-                        break;
-                    case 'Yearly':
-                         budgetValue = plannedBudget[year].summary.incomeStatement.revenue.total;
-                        break;
-                    case 'Monthly':
-                    default:
-                        const month = parseInt(periodStr);
-                        budgetValue = plannedBudget[year].months[month]?.summary.incomeStatement.revenue.total || 0;
-                        break;
+                    }
+                    case 'Quarterly': key = `${year}-Q${quarter}`; break;
+                    case 'Yearly': key = `${year}`; break;
+                    default: key = `${year}-${month}`; break;
                 }
-                aggregated[key].budget = budgetValue;
+                
+                let entry = data.get(key);
+                if (entry) {
+                    const saleTotal = s.units * s.unitPrice;
+                    if (s.invoicePaidDate) {
+                        entry.realized += saleTotal;
+                    } else {
+                        entry.pipeline += saleTotal;
+                    }
+                }
             }
         });
-        
-        // FIX: Explicitly typed the sort callback parameters to resolve type inference issues.
-        return Object.values(aggregated).sort((a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name));
 
+        return Array.from(data.values());
     }, [salesLedgerData, plannedBudget, period, interval]);
 
     const summary = useMemo(() => {
-        const totalRealized = salesData.reduce((sum, d) => sum + d.realized, 0);
-        const totalPipeline = salesData.reduce((sum, d) => sum + d.pipeline, 0);
-        const totalBudget = salesData.reduce((sum, d) => sum + d.budget, 0);
-        const totalProgress = totalRealized + totalPipeline;
-        const progressVsBudget = totalBudget > 0 ? (totalProgress / totalBudget) * 100 : 0;
-        return { totalRealized, totalPipeline, totalBudget, totalProgress, progressVsBudget };
+        const totals = salesData.reduce((acc, d) => {
+            acc.realized += d.realized;
+            acc.pipeline += d.pipeline;
+            acc.budgetOnline += d.budgetOnline;
+            acc.budgetRetail += d.budgetRetail;
+            acc.budgetHoreca += d.budgetHoreca;
+            return acc;
+        }, { realized: 0, pipeline: 0, budgetOnline: 0, budgetRetail: 0, budgetHoreca: 0 });
+
+        const totalBudget = totals.budgetOnline + totals.budgetRetail + totals.budgetHoreca;
+        const progressVsBudget = totalBudget > 0 ? (totals.realized / totalBudget) * 100 : 0;
+        
+        return { 
+            totalRealized: totals.realized, 
+            totalPipeline: totals.pipeline, 
+            totalBudget, 
+            progressVsBudget 
+        };
     }, [salesData]);
     
+    const hasData = useMemo(() => salesData.some(d => d.realized > 0 || d.pipeline > 0 || d.budgetOnline > 0 || d.budgetRetail > 0 || d.budgetHoreca > 0), [salesData]);
+
     return (
         <div className="bg-brand-surface rounded-lg shadow-lg p-6 flex flex-col gap-4">
             <h3 className="text-xl font-bold text-brand-text-primary">Sales Progress</h3>
@@ -191,18 +252,28 @@ const SalesProgressCard: React.FC = () => {
             </div>
 
             <div className="flex-grow h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                     <BarChart data={salesData} margin={{ top: 5, right: 10, bottom: 5, left: -20 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                        <XAxis dataKey="name" stroke="#9CA3AF" fontSize={12} />
-                        <YAxis stroke="#9CA3AF" tickFormatter={(val) => formatCurrency(val, true)} fontSize={12}/>
-                        <Tooltip content={<CustomTooltip />} />
-                        <Legend wrapperStyle={{fontSize: "12px"}}/>
-                        <Bar dataKey="realized" name="Realized Sales" stackId="a" fill="#10B981" />
-                        <Bar dataKey="pipeline" name="Sales in Pipeline" stackId="a" fill="#F59E0B" />
-                        <Line type="monotone" dataKey="budget" name="Budget" stroke="#9CA3AF" strokeWidth={2} dot={false} strokeDasharray="5 5" />
-                    </BarChart>
-                </ResponsiveContainer>
+                {!hasData ? (
+                    <div className="flex items-center justify-center h-full text-brand-text-secondary">
+                        <p>No budget or sales data available for the selected period.</p>
+                    </div>
+                ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                         <BarChart data={salesData} margin={{ top: 5, right: 10, bottom: 5, left: -20 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                            <XAxis dataKey="name" stroke="#9CA3AF" fontSize={12} />
+                            <YAxis stroke="#9CA3AF" tickFormatter={(val) => formatCurrency(val, true)} fontSize={12}/>
+                            <Tooltip content={<CustomTooltip />} />
+                            <Legend wrapperStyle={{fontSize: "12px"}}/>
+                            
+                            <Bar dataKey="realized" name="Realized" stackId="actual" fill="#10B981" />
+                            <Bar dataKey="pipeline" name="Pipeline" stackId="actual" fill="#F59E0B" />
+                            
+                            <Bar dataKey="budgetOnline" name="Budget: Online" stackId="budget" fill="#3B82F6" fillOpacity={0.7}/>
+                            <Bar dataKey="budgetRetail" name="Budget: Retail" stackId="budget" fill="#14B8A6" fillOpacity={0.7}/>
+                            <Bar dataKey="budgetHoreca" name="Budget: HORECA" stackId="budget" fill="#A855F7" fillOpacity={0.7}/>
+                        </BarChart>
+                    </ResponsiveContainer>
+                )}
             </div>
         </div>
     )
