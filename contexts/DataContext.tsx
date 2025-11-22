@@ -1,6 +1,6 @@
 import React, { createContext, useState, useMemo, useContext, PropsWithChildren } from 'react';
 import { Granularity, OKR, RetailPrice, AllAssumptions, InventoryLedgerItem, CashJournalEntry, SalesLedgerEntry, ActivityLogEntry, DetailedFinancialData, FinancialData, ProductSKU, ExportData } from '../types';
-import { YEARS, INITIAL_PLANNED_BUDGET, INITIAL_OKRS, INITIAL_PRICING, INITIAL_ASSUMPTIONS, INITIAL_INVENTORY_LEDGER, INITIAL_CASH_JOURNAL, PRODUCT_SKUS, INITIAL_SALES_LEDGER, INITIAL_ACTIVITY_LOG } from '../constants';
+import { YEARS, INITIAL_PLANNED_BUDGET, INITIAL_OKRS, INITIAL_PRICING, INITIAL_ASSUMPTIONS, INITIAL_INVENTORY_LEDGER, INITIAL_CASH_JOURNAL, PRODUCT_SKUS, INITIAL_SALES_LEDGER_MOCK, INITIAL_ACTIVITY_LOG } from '../constants';
 import { aggregateFinancialData, getPeriodLabel } from '../utils/dataUtils';
 import { aggregateActualsFromLedgers } from '../services/aggregationService';
 
@@ -73,7 +73,7 @@ export const DataProvider: React.FC<PropsWithChildren<{}>> = ({ children }) => {
     // Pillar 2 state
     const [inventoryLedgerData, setInventoryLedgerData] = useState<InventoryLedgerItem[]>(INITIAL_INVENTORY_LEDGER);
     const [cashJournalData, setCashJournalData] = useState<CashJournalEntry[]>(INITIAL_CASH_JOURNAL);
-    const [salesLedgerData, setSalesLedgerData] = useState<SalesLedgerEntry[]>(INITIAL_SALES_LEDGER);
+    const [salesLedgerData, setSalesLedgerData] = useState<SalesLedgerEntry[]>(INITIAL_SALES_LEDGER_MOCK);
     const [activityLogData, setActivityLogData] = useState<ActivityLogEntry[]>(INITIAL_ACTIVITY_LOG);
     
     // Other app state

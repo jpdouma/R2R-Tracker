@@ -100,6 +100,22 @@ export const INITIAL_CASH_JOURNAL: CashJournalEntry[] = [];
 export const INITIAL_SALES_LEDGER: SalesLedgerEntry[] = [];
 export const INITIAL_ACTIVITY_LOG: ActivityLogEntry[] = [];
 
+// Add mock sales data for development and demonstration
+export const INITIAL_SALES_LEDGER_MOCK: SalesLedgerEntry[] = [
+  // Week 1 of Jan 2025 (Model Week 1)
+  { id: 'sale1', orderDate: '2025-01-05', invoicePaidDate: '2025-01-05', sku: 'COF-ARA-1000', units: 5, unitPrice: 28, channel: 'Sales - Retail', customerId: 'cust1' },
+  { id: 'sale2', orderDate: '2025-01-06', invoicePaidDate: '2025-01-06', sku: 'COF-ARA-250', units: 10, unitPrice: 8, channel: 'Sales - Online', customerId: 'cust2' },
+  // Week 2 of Jan 2025 (Model Week 2)
+  { id: 'sale3', orderDate: '2025-01-12', invoicePaidDate: '2025-01-12', sku: 'COF-ROB-250', units: 20, unitPrice: 20, channel: 'Sales - HORECA', customerId: 'cust3' },
+  { id: 'sale4', orderDate: '2025-01-13', invoicePaidDate: undefined, sku: 'COF-ARA-1000', units: 8, unitPrice: 27.5, channel: 'Sales - Retail', customerId: 'cust4' }, // Pipeline
+  // Week 3 of Jan 2025 (Model Week 3)
+  { id: 'sale5', orderDate: '2025-01-20', invoicePaidDate: '2025-01-20', sku: 'COF-ARA-250', units: 15, unitPrice: 8.5, channel: 'Sales - Online', customerId: 'cust5' },
+  // Week 4 of Jan 2025 (Model Week 4)
+  { id: 'sale6', orderDate: '2025-01-26', invoicePaidDate: undefined, sku: 'COF-ARA-1000', units: 10, unitPrice: 20, channel: 'Sales - HORECA', customerId: 'cust6' }, // Pipeline
+  { id: 'sale7', orderDate: '2025-01-27', invoicePaidDate: '2025-01-27', sku: 'COF-ROB-250', units: 2, unitPrice: 25, channel: 'Sales - Retail', customerId: 'cust7' },
+];
+
+
 const getEmptyFinancialData = (): FinancialData => {
     return JSON.parse(JSON.stringify({
         incomeStatement: { revenue: { online: 0, retail: 0, horeca: 0, total: 0 }, cogs: 0, grossProfit: 0, operatingExpenses: { marketingAndSales: 0, logisticsAndDistribution: 0, salariesAndWages: 0, rentAndUtilities: 0, techAndSoftware: 0, professionalFees: 0, depreciation: 0, other: 0, total: 0 }, operatingIncome: 0, interestExpense: 0, incomeBeforeTaxes: 0, incomeTaxExpense: 0, netIncome: 0 },

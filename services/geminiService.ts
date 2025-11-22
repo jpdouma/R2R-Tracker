@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import type { FinancialData, Granularity } from '../types';
 
 const formatCurrency = (value: number) => {
@@ -50,29 +50,35 @@ export const getFinancialAnalysis = async (budget: FinancialData, actual: Financ
 
 
   const prompt = `
-    You are a senior financial analyst providing a performance review for a coffee startup.
+    You are a senior financial analyst for a coffee import and e-commerce startup (B2B Horeca & B2C Retail).
     Analyze the following financial data for the period: ${periodLabel}.
     The currency is in Euros (€).
 
     ${dataPrompt}
 
-    Based on this data, provide a concise analysis in Markdown format. Address the following points:
-    1.  **Overall Performance Summary:** Give a brief overview of performance against the budget for this specific period.
-    2.  **Key Highlights (Positive Variances):** Identify 1-2 areas where the company outperformed its budget.
-    3.  **Areas for Improvement (Negative Variances):** Identify 1-2 areas of underperformance or concern.
-    4.  **Actionable Recommendation:** Suggest one strategic action for management to focus on based on this period's results.
+    Based on this data, provide a concise analysis in Markdown format. 
+    Be highly specific to the coffee industry context where applicable (e.g., inventory fluctuations, seasonal sales).
+    
+    Address the following points:
+    1.  **Overall Performance Summary:** Give a brief overview of performance against the budget.
+    2.  **Key Highlights:** Identify 1-2 areas where the company outperformed its budget (Positive Variance).
+    3.  **Concerns:** Identify 1-2 areas of underperformance (Negative Variance).
+    4.  **Strategic Recommendation:** Suggest one specific, actionable step for management.
 
-    Structure your response with clear headings. Be insightful and direct.
+    Structure your response with clear headings (###).
     `;
 
   try {
-    const response = await ai.models.generateContent({
+    const response: GenerateContentResponse = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: prompt,
     });
-    return response.text;
-  } catch (error) {
+    return response.text || "No analysis generated.";
+  } catch (error: any) {
     console.error("Error fetching financial analysis:", error);
+    if (error.message?.includes("API_KEY")) {
+        return "Error: Invalid or missing API Key.";
+    }
     return "An error occurred while analyzing the financial data. Please check the console for details.";
   }
 };

@@ -1,18 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { useDataContext } from '../../contexts/DataContext';
-import { ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Bar } from 'recharts';
+import { ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Bar, LabelList } from 'recharts';
 import { MONTH_NAMES } from '../../constants';
-
-const getModelWeekAndYear = (d: Date) => {
-    const year = d.getUTCFullYear();
-    const month = d.getUTCMonth(); // 0-11
-    const date = d.getUTCDate();
-    const weekOfMonth = Math.min(4, Math.floor((date - 1) / 7) + 1);
-    const weekOfYear = month * 4 + weekOfMonth; // This gives week 1-48
-    return { week: weekOfYear, year: year };
-};
-
-const getQuarter = (d: Date) => Math.floor(d.getUTCMonth() / 3) + 1;
+import { getModelWeekAndYear, getQuarter } from '../../utils/dataUtils';
 
 const formatCurrency = (value: number, compact = true) => {
     if (compact) {
@@ -31,6 +21,9 @@ const SummaryKpi: React.FC<{ title: string; value: string; subValue?: string, su
 
 const CustomTooltip: React.FC<any> = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
+        // Calculate total budget from its components
+        const totalBudget = payload.filter((p: any) => p.dataKey.startsWith('budget')).reduce((acc: number, curr: any) => acc + curr.value, 0);
+        
         return (
             <div className="bg-brand-surface p-4 border border-brand-border rounded-lg shadow-lg text-sm">
                 <p className="font-bold text-brand-text-primary mb-2">{label}</p>
@@ -39,12 +32,12 @@ const CustomTooltip: React.FC<any> = ({ active, payload, label }) => {
                         {pld.name}: {formatCurrency(pld.value, false)}
                     </p>
                 ))}
+                <p className="font-semibold text-brand-text-primary mt-2 pt-2 border-t border-brand-border">Total Budget: {formatCurrency(totalBudget, false)}</p>
             </div>
         );
     }
     return null;
 };
-
 
 type Interval = 'Weekly' | 'Monthly' | 'Quarterly' | 'Yearly';
 
@@ -72,9 +65,8 @@ const SalesProgressCard: React.FC = () => {
         const startDate = new Date(`${period.start}T00:00:00Z`);
         const endDate = new Date(`${period.end}T23:59:59Z`);
 
-        const data = new Map<string, {name: string, realized: number, pipeline: number, budgetOnline: number, budgetRetail: number, budgetHoreca: number}>();
+        const data = new Map<string, {name: string, realized: number, pipeline: number, budgetOnline: number, budgetRetail: number, budgetHoreca: number, totalBudget: number}>();
 
-        // 1. Populate with budget data for the selected range and interval
         let currentDate = new Date(startDate);
         while(currentDate <= endDate) {
             const year = currentDate.getUTCFullYear();
@@ -94,35 +86,28 @@ const SalesProgressCard: React.FC = () => {
                     const budgetYear = weekYear;
                     const budgetMonth = Math.floor((week - 1) / 4) + 1;
                     const budgetWeekOfMonth = ((week - 1) % 4) + 1;
-
-                    if (budgetYear < 2025 || (budgetYear === 2025 && budgetMonth !== 12)) {
-                        // No budget before Dec 2025
-                    } else {
-                        const yearBudget = plannedBudget[budgetYear];
-                        if(yearBudget?.months[budgetMonth]?.weeks[budgetWeekOfMonth]) {
-                            const wBudget = yearBudget.months[budgetMonth].weeks[budgetWeekOfMonth].incomeStatement.revenue;
-                            budget.online = wBudget.online;
-                            budget.retail = wBudget.retail;
-                            budget.horeca = wBudget.horeca;
-                        }
+                    
+                    const yearBudget = plannedBudget[budgetYear];
+                    if(yearBudget?.months[budgetMonth]?.weeks[budgetWeekOfMonth]) {
+                        const wBudget = yearBudget.months[budgetMonth].weeks[budgetWeekOfMonth].incomeStatement.revenue;
+                        budget.online = wBudget.online;
+                        budget.retail = wBudget.retail;
+                        budget.horeca = wBudget.horeca;
                     }
+
                     nextDate.setUTCDate(currentDate.getUTCDate() + 7);
                     break;
                 }
                 case 'Quarterly': {
                     key = `${year}-Q${quarter}`;
                     name = `Q${quarter}`;
-                    if (year < 2025 || (year === 2025 && quarter !== 4)) {
-                        // No budget
-                    } else {
-                        const startMonth = (quarter - 1) * 3 + 1;
-                        for(let i=startMonth; i < startMonth+3; i++){
-                            if (plannedBudget[year]?.months[i]) {
-                                const mBudget = plannedBudget[year].months[i].summary.incomeStatement.revenue;
-                                budget.online += mBudget.online;
-                                budget.retail += mBudget.retail;
-                                budget.horeca += mBudget.horeca;
-                            }
+                    const startMonth = (quarter - 1) * 3 + 1;
+                    for(let i=startMonth; i < startMonth+3; i++){
+                        if (plannedBudget[year]?.months[i]) {
+                            const mBudget = plannedBudget[year].months[i].summary.incomeStatement.revenue;
+                            budget.online += mBudget.online;
+                            budget.retail += mBudget.retail;
+                            budget.horeca += mBudget.horeca;
                         }
                     }
                     nextDate.setUTCMonth(currentDate.getUTCMonth() + 3);
@@ -144,9 +129,7 @@ const SalesProgressCard: React.FC = () => {
                 default: {
                     key = `${year}-${month}`;
                     name = `${MONTH_NAMES[month-1]}`;
-                    if (year < 2025 || (year === 2025 && month !== 12)) {
-                        // no budget
-                    } else if (plannedBudget[year]?.months[month]) {
+                    if (plannedBudget[year]?.months[month]) {
                         const mBudget = plannedBudget[year].months[month].summary.incomeStatement.revenue;
                         budget.online = mBudget.online;
                         budget.retail = mBudget.retail;
@@ -157,19 +140,20 @@ const SalesProgressCard: React.FC = () => {
                 }
             }
             if(!data.has(key)) {
+                 const totalBudgetForPeriod = budget.online + budget.retail + budget.horeca;
                 data.set(key, { 
                     name, 
                     realized: 0, 
                     pipeline: 0, 
                     budgetOnline: budget.online, 
                     budgetRetail: budget.retail, 
-                    budgetHoreca: budget.horeca 
+                    budgetHoreca: budget.horeca,
+                    totalBudget: totalBudgetForPeriod
                 });
             }
             currentDate = nextDate;
         }
 
-        // 2. Aggregate actual sales
         salesLedgerData.forEach(s => {
             const orderDate = new Date(s.orderDate);
             if(orderDate >= startDate && orderDate <= endDate) {
@@ -208,24 +192,40 @@ const SalesProgressCard: React.FC = () => {
         const totals = salesData.reduce((acc, d) => {
             acc.realized += d.realized;
             acc.pipeline += d.pipeline;
-            acc.budgetOnline += d.budgetOnline;
-            acc.budgetRetail += d.budgetRetail;
-            acc.budgetHoreca += d.budgetHoreca;
+            acc.budget += d.totalBudget;
             return acc;
-        }, { realized: 0, pipeline: 0, budgetOnline: 0, budgetRetail: 0, budgetHoreca: 0 });
+        }, { realized: 0, pipeline: 0, budget: 0 });
 
-        const totalBudget = totals.budgetOnline + totals.budgetRetail + totals.budgetHoreca;
-        const progressVsBudget = totalBudget > 0 ? (totals.realized / totalBudget) * 100 : 0;
+        const progressVsBudget = totals.budget > 0 ? (totals.realized / totals.budget) * 100 : 0;
         
         return { 
             totalRealized: totals.realized, 
             totalPipeline: totals.pipeline, 
-            totalBudget, 
+            totalBudget: totals.budget,
             progressVsBudget 
         };
     }, [salesData]);
     
-    const hasData = useMemo(() => salesData.some(d => d.realized > 0 || d.pipeline > 0 || d.budgetOnline > 0 || d.budgetRetail > 0 || d.budgetHoreca > 0), [salesData]);
+    const hasData = useMemo(() => salesData.some(d => d.realized > 0 || d.pipeline > 0 || d.totalBudget > 0), [salesData]);
+
+    const CustomBarLabel = (props: any) => {
+        const { x, y, width, index } = props;
+        const dataPoint = salesData[index];
+        
+        if (!dataPoint || dataPoint.totalBudget <= 0) {
+            return null;
+        }
+        
+        const percentage = (dataPoint.realized / dataPoint.totalBudget) * 100;
+        
+        if(width < 25) return null;
+
+        return (
+            <text x={x + width / 2} y={y} fill="#F9FAFB" textAnchor="middle" dy={-6} fontSize={12} className="font-semibold">
+                {`${percentage.toFixed(0)}%`}
+            </text>
+        );
+    };
 
     return (
         <div className="bg-brand-surface rounded-lg shadow-lg p-6 flex flex-col gap-4">
@@ -258,19 +258,23 @@ const SalesProgressCard: React.FC = () => {
                     </div>
                 ) : (
                     <ResponsiveContainer width="100%" height="100%">
-                         <BarChart data={salesData} margin={{ top: 5, right: 10, bottom: 5, left: -20 }}>
+                         <BarChart data={salesData} margin={{ top: 20, right: 10, bottom: 5, left: -20 }} barGap={4}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                             <XAxis dataKey="name" stroke="#9CA3AF" fontSize={12} />
                             <YAxis stroke="#9CA3AF" tickFormatter={(val) => formatCurrency(val, true)} fontSize={12}/>
                             <Tooltip content={<CustomTooltip />} />
                             <Legend wrapperStyle={{fontSize: "12px"}}/>
                             
-                            <Bar dataKey="realized" name="Realized" stackId="actual" fill="#10B981" />
-                            <Bar dataKey="pipeline" name="Pipeline" stackId="actual" fill="#F59E0B" />
-                            
                             <Bar dataKey="budgetOnline" name="Budget: Online" stackId="budget" fill="#3B82F6" fillOpacity={0.7}/>
                             <Bar dataKey="budgetRetail" name="Budget: Retail" stackId="budget" fill="#14B8A6" fillOpacity={0.7}/>
-                            <Bar dataKey="budgetHoreca" name="Budget: HORECA" stackId="budget" fill="#A855F7" fillOpacity={0.7}/>
+                            <Bar dataKey="budgetHoreca" name="Budget: HORECA" stackId="budget" fill="#A855F7" fillOpacity={0.7}>
+                                <LabelList dataKey="totalBudget" content={<CustomBarLabel />} />
+                            </Bar>
+                            
+                            <Bar dataKey="realized" name="Realized" fill="#10B981" radius={[4, 4, 0, 0]} />
+                            
+                            <Bar dataKey="pipeline" name="Pipeline" fill="#F59E0B" radius={[4, 4, 0, 0]} />
+
                         </BarChart>
                     </ResponsiveContainer>
                 )}

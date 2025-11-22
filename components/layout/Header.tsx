@@ -1,8 +1,8 @@
-
 import React, { useRef, useState } from 'react';
 import { Granularity, ExportData } from '../../types';
 import { MONTH_NAMES, YEARS, DATA_VERSION } from '../../constants';
 import { useDataContext } from '../../contexts/DataContext';
+import { getWeekSunday } from '../../utils/dataUtils';
 
 const GranularityButton: React.FC<{label: Granularity, current: Granularity, onClick: (g: Granularity) => void}> = ({label, current, onClick}) => (
     <button
@@ -14,7 +14,6 @@ const GranularityButton: React.FC<{label: Granularity, current: Granularity, onC
 )
 
 const validateImportData = (data: any): ExportData => {
-    // 1. Version Check
     if (!data.version || typeof data.version !== 'string') {
         throw new Error("Invalid file: Missing or invalid version number.");
     }
@@ -22,7 +21,6 @@ const validateImportData = (data: any): ExportData => {
         throw new Error(`Version mismatch. App requires v${DATA_VERSION}, file is v${data.version}.`);
     }
 
-    // 2. Top-level keys check
     const requiredKeys: (keyof ExportData)[] = ['plannedBudget', 'assumptionsData', 'okrs', 'pricingData', 'inventoryLedgerData', 'cashJournalData', 'salesLedgerData', 'activityLogData'];
     for (const key of requiredKeys) {
         if (!(key in data)) {
@@ -30,7 +28,6 @@ const validateImportData = (data: any): ExportData => {
         }
     }
 
-    // 3. Basic structural integrity check (are arrays actual arrays?)
     const arrayKeys: (keyof ExportData)[] = ['okrs', 'inventoryLedgerData', 'cashJournalData', 'salesLedgerData', 'activityLogData'];
     for (const key of arrayKeys) {
         if (!Array.isArray(data[key])) {
@@ -38,7 +35,6 @@ const validateImportData = (data: any): ExportData => {
         }
     }
     
-    // 4. Deeper check for a critical nested property
     if (!data.assumptionsData?.startup?.items || !Array.isArray(data.assumptionsData.startup.items)) {
          throw new Error(`Invalid file: assumptionsData.startup.items is missing or not an array.`);
     }
@@ -49,7 +45,6 @@ const validateImportData = (data: any): ExportData => {
 
     return data as ExportData;
 }
-
 
 const Header: React.FC = () => {
   const { 
@@ -77,27 +72,6 @@ const Header: React.FC = () => {
     setGranularity(g);
     setSubPeriod(1);
   };
-  
-  const getWeekSunday = (year: number, weekNum: number): string => {
-    // Note: This logic aligns with the 4-week-per-month data model.
-    const monthIndex = Math.floor((weekNum - 1) / 4);
-    const weekInMonth = (weekNum - 1) % 4;
-    const approxDay = (weekInMonth + 1) * 7;
-    
-    const date = new Date(year, monthIndex, approxDay);
-    const dayOfWeek = date.getDay(); // 0 is Sunday, 6 is Saturday
-    
-    // If it's not Sunday, find the next Sunday
-    const daysToAdd = dayOfWeek === 0 ? 0 : 7 - dayOfWeek;
-    date.setDate(date.getDate() + daysToAdd);
-    
-    // Format to MMM/DD/YYYY
-    const month = MONTH_NAMES[date.getMonth()];
-    const day = date.getDate().toString().padStart(2, '0');
-    const formattedYear = date.getFullYear();
-    
-    return `${month}/${day}/${formattedYear}`;
-  }
 
   const handleExport = () => {
     try {
@@ -153,7 +127,7 @@ const Header: React.FC = () => {
             setImportStatus({ message: `Import failed: ${error.message}`, type: 'error' });
         } finally {
             setIsImporting(false);
-            if (event.target) event.target.value = ''; // Reset input
+            if (event.target) event.target.value = ''; 
             setTimeout(() => setImportStatus(null), 5000);
         }
     };

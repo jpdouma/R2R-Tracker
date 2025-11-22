@@ -145,16 +145,18 @@ const FinancialStatementViewer: React.FC = () => {
             <tr className={`border-b border-brand-border/50 ${isBold ? 'font-semibold bg-gray-800/30' : ''}`}>
                 <td className={`py-1.5 px-3 ${isSub ? 'pl-6' : ''}`}>{label}</td>
                 {YEARS.map(year => {
-                    let current = budgetToDisplay[year].summary[statement];
+                    let current: any = budgetToDisplay[year].summary[statement];
                     const keys = path.split('.');
-                    for(const key of keys) { current = current[key]; }
-                    const value = current;
+                    for(const key of keys) { 
+                        if (current) current = current[key]; 
+                    }
+                    const value = current as number;
                     
                     return (
                         <td key={year} className="py-1.5 px-3 text-right">
                            {isEditing && isEditable ? (
-                                <input type="number" value={Math.round(value)} onChange={e => handleChange(year, statement, path, parseFloat(e.target.value) || 0)} className="bg-brand-surface p-1 rounded-md w-full text-sm outline-none focus:ring-1 focus:ring-brand-primary text-right"/>
-                           ) : formatCurrency(value)}
+                                <input type="number" value={Math.round(value || 0)} onChange={e => handleChange(year, statement, path, parseFloat(e.target.value) || 0)} className="bg-brand-surface p-1 rounded-md w-full text-sm outline-none focus:ring-1 focus:ring-brand-primary text-right"/>
+                           ) : formatCurrency(value || 0)}
                         </td>
                     );
                 })}

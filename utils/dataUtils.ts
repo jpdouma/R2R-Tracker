@@ -1,14 +1,11 @@
 import { DetailedFinancialData, FinancialData, Granularity } from '../types';
-import { MONTH_NAMES } from '../constants';
+import { MONTH_NAMES, YEARS } from '../constants';
 
 const getEmptyFinancialData = (): FinancialData => {
     return JSON.parse(JSON.stringify({
-        // FIX: Replaced 'wholesale' with 'retail' to match FinancialData type
         incomeStatement: { revenue: { online: 0, retail: 0, horeca: 0, total: 0 }, cogs: 0, grossProfit: 0, operatingExpenses: { marketingAndSales: 0, logisticsAndDistribution: 0, salariesAndWages: 0, rentAndUtilities: 0, techAndSoftware: 0, professionalFees: 0, depreciation: 0, other: 0, total: 0 }, operatingIncome: 0, interestExpense: 0, incomeBeforeTaxes: 0, incomeTaxExpense: 0, netIncome: 0 },
         cashFlow: { operatingActivities: { netIncome: 0, depreciation: 0, changeInAccountsReceivable: 0, changeInInventory: 0, changeInAccountsPayable: 0, changeInAccruedExpenses: 0, changeInVatPayable: 0, changeInDeferredTaxes: 0, netCash: 0 }, investingActivities: { purchaseOfFixedAssets: 0, capitalizedStartupCosts: 0, netCash: 0 }, financingActivities: { netIncreaseFromBorrowings: 0, repaymentOfLoans: 0, equityContributions: 0, dividendsPaid: 0, netCash: 0 }, netChangeInCash: 0, cashAtBeginningOfYear: 0, cashAtEndOfYear: 0 },
-        balanceSheet: { assets: { current: { cash: 0, accountsReceivable: 0, inventory: 0, total: 0 }, nonCurrent: { fixedAssets: 0, intangibleAssets: 0, accumulatedDepreciation: 0, netBookValue: 0, other: 0, total: 0 }, total: 0 }, liabilitiesAndEquity: { liabilities: { current: { accountsPayable: 0, shortTermDebt: 0, accruedExpenses: 0, vatPayable: 0, deferredTaxes: 0, dividendsPayable: 0, total: 0 }, nonCurrent: { longTermDebt: 0, total: 0 }, total: 0 }, equity: { shareCapital: 0, retainedEarnings: 0, total: 0 }, total: 0 } },
-        // FIX: Replaced 'wholesale' with 'retail' to match FinancialData type
-        mass: { online: 0, retail: 0, horeca: 0, total: 0 }
+        balanceSheet: { assets: { current: { cash: 0, accountsReceivable: 0, inventory: 0, total: 0 }, nonCurrent: { fixedAssets: 0, intangibleAssets: 0, accumulatedDepreciation: 0, netBookValue: 0, other: 0, total: 0 }, total: 0 }, liabilitiesAndEquity: { liabilities: { current: { accountsPayable: 0, shortTermDebt: 0, accruedExpenses: 0, vatPayable: 0, deferredTaxes: 0, dividendsPayable: 0, total: 0 }, nonCurrent: { longTermDebt: 0, total: 0 }, total: 0 }, equity: { shareCapital: 0, retainedEarnings: 0, total: 0 }, total: 0 }, mass: { online: 0, retail: 0, horeca: 0, total: 0 } },
     }));
 };
 
@@ -59,7 +56,7 @@ export const aggregateFinancialData = (
     }
 };
 
-const getWeekSunday = (year: number, weekNum: number): string => {
+export const getWeekSunday = (year: number, weekNum: number): string => {
     const monthIndex = Math.floor((weekNum - 1) / 4);
     const weekInMonth = (weekNum - 1) % 4;
     const approxDay = (weekInMonth + 1) * 7;
@@ -74,7 +71,7 @@ const getWeekSunday = (year: number, weekNum: number): string => {
     const day = date.getDate().toString().padStart(2, '0');
     
     return `${month}/${day}/${year}`;
-}
+};
 
 export const getPeriodLabel = (
     year: number,
@@ -94,3 +91,16 @@ export const getPeriodLabel = (
             return `${year}`;
     }
 };
+
+// --- New Helper Functions ---
+
+export const getModelWeekAndYear = (d: Date) => {
+    const year = d.getUTCFullYear();
+    const month = d.getUTCMonth(); // 0-11
+    const date = d.getUTCDate();
+    const weekOfMonth = Math.min(4, Math.floor((date - 1) / 7) + 1);
+    const weekOfYear = month * 4 + weekOfMonth; // This gives week 1-48
+    return { week: weekOfYear, year: year };
+};
+
+export const getQuarter = (d: Date) => Math.floor(d.getUTCMonth() / 3) + 1;
