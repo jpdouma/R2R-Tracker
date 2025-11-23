@@ -1,6 +1,23 @@
 import { DetailedFinancialData, FinancialData, Granularity } from '../types';
 import { MONTH_NAMES, YEARS } from '../constants';
 
+// Centralized formatting for consistency across the app
+export const formatCurrency = (value: number, compact: boolean = false): string => {
+    if (value === undefined || value === null || isNaN(value)) return "N/A";
+    const options: Intl.NumberFormatOptions = {
+        style: 'currency',
+        currency: 'EUR',
+    };
+    if (compact) {
+        options.notation = 'compact';
+        options.maximumFractionDigits = 1;
+    } else {
+        options.minimumFractionDigits = 0;
+        options.maximumFractionDigits = 0;
+    }
+    return new Intl.NumberFormat('en-US', options).format(value);
+};
+
 const getEmptyFinancialData = (): FinancialData => {
     return JSON.parse(JSON.stringify({
         incomeStatement: { revenue: { online: 0, retail: 0, horeca: 0, total: 0 }, cogs: 0, grossProfit: 0, operatingExpenses: { marketingAndSales: 0, logisticsAndDistribution: 0, salariesAndWages: 0, rentAndUtilities: 0, techAndSoftware: 0, professionalFees: 0, depreciation: 0, other: 0, total: 0 }, operatingIncome: 0, interestExpense: 0, incomeBeforeTaxes: 0, incomeTaxExpense: 0, netIncome: 0 },
@@ -64,6 +81,7 @@ export const getWeekSunday = (year: number, weekNum: number): string => {
     const date = new Date(year, monthIndex, approxDay);
     const dayOfWeek = date.getDay(); // 0 is Sunday
     
+    // Find the next Sunday (or current if it is Sunday)
     const daysToAdd = dayOfWeek === 0 ? 0 : 7 - dayOfWeek;
     date.setDate(date.getDate() + daysToAdd);
     
@@ -92,7 +110,7 @@ export const getPeriodLabel = (
     }
 };
 
-// --- New Helper Functions ---
+// --- Helper Functions ---
 
 export const getModelWeekAndYear = (d: Date) => {
     const year = d.getUTCFullYear();

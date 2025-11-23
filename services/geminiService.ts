@@ -20,52 +20,48 @@ export const getFinancialAnalysis = async (budget: FinancialData, actual: Financ
 
   if (granularity === 'Weekly') {
       dataPrompt = `
-      **Focus Area: Weekly Cash Flow**
+      ### Weekly Cash Flow Focus: ${periodLabel}
 
-      **Budgeted Data for ${periodLabel}:**
+      **Budget Data:**
       - Net Change in Cash: ${formatCurrency(budget.cashFlow.netChangeInCash)}
-      - Cash at End of Period: ${formatCurrency(budget.cashFlow.cashAtEndOfYear)}
+      - Ending Cash Balance: ${formatCurrency(budget.cashFlow.cashAtEndOfYear)}
 
-      **Actual Data for ${periodLabel}:**
+      **Actual Data:**
       - Net Change in Cash: ${formatCurrency(actual.cashFlow.netChangeInCash)}
-      - Cash at End of Period: ${formatCurrency(actual.cashFlow.cashAtEndOfYear)}
+      - Ending Cash Balance: ${formatCurrency(actual.cashFlow.cashAtEndOfYear)}
       `;
   } else {
        dataPrompt = `
-      **Budgeted Data for ${periodLabel}:**
-      - Total Revenue: ${formatCurrency(budget.incomeStatement.revenue.total)}
-      - Net Income: ${formatCurrency(budget.incomeStatement.netIncome)}
-      - Gross Margin: ${budgetGrossMargin}%
-      - Total Operating Expenses: ${formatCurrency(budget.incomeStatement.operatingExpenses.total)}
-      - Cash at End of Period: ${formatCurrency(budget.cashFlow.cashAtEndOfYear)}
+      ### Financial Performance: ${periodLabel}
 
-      **Actual Data for ${periodLabel}:**
-      - Total Revenue: ${formatCurrency(actual.incomeStatement.revenue.total)}
-      - Net Income: ${formatCurrency(actual.incomeStatement.netIncome)}
-      - Gross Margin: ${actualGrossMargin}%
-      - Total Operating Expenses: ${formatCurrency(actual.incomeStatement.operatingExpenses.total)}
-      - Cash at End of Period: ${formatCurrency(actual.cashFlow.cashAtEndOfYear)}
+      | Metric | Budget | Actual |
+      | :--- | :--- | :--- |
+      | **Total Revenue** | ${formatCurrency(budget.incomeStatement.revenue.total)} | ${formatCurrency(actual.incomeStatement.revenue.total)} |
+      | **Net Income** | ${formatCurrency(budget.incomeStatement.netIncome)} | ${formatCurrency(actual.incomeStatement.netIncome)} |
+      | **Gross Margin** | ${budgetGrossMargin}% | ${actualGrossMargin}% |
+      | **Operating Expenses** | ${formatCurrency(budget.incomeStatement.operatingExpenses.total)} | ${formatCurrency(actual.incomeStatement.operatingExpenses.total)} |
+      | **Ending Cash** | ${formatCurrency(budget.cashFlow.cashAtEndOfYear)} | ${formatCurrency(actual.cashFlow.cashAtEndOfYear)} |
       `;
   }
 
 
   const prompt = `
-    You are a senior financial analyst for a coffee import and e-commerce startup (B2B Horeca & B2C Retail).
-    Analyze the following financial data for the period: ${periodLabel}.
-    The currency is in Euros (€).
+    You are a senior financial analyst for a coffee import and e-commerce startup. 
+    The company imports green beans from Uganda, roasts them, and sells via B2B (Horeca) and B2C (Online/Retail) channels.
+    Currency: EUR (€).
 
+    Analyze the following financial data:
+    
     ${dataPrompt}
 
-    Based on this data, provide a concise analysis in Markdown format. 
-    Be highly specific to the coffee industry context where applicable (e.g., inventory fluctuations, seasonal sales).
-    
-    Address the following points:
-    1.  **Overall Performance Summary:** Give a brief overview of performance against the budget.
-    2.  **Key Highlights:** Identify 1-2 areas where the company outperformed its budget (Positive Variance).
-    3.  **Concerns:** Identify 1-2 areas of underperformance (Negative Variance).
-    4.  **Strategic Recommendation:** Suggest one specific, actionable step for management.
+    **Analysis Requirements:**
+    1.  **Executive Summary:** A 1-sentence overview of the period's performance.
+    2.  **Variance Analysis:**
+        *   Highlight 1 positive variance (where we beat budget). Explain *why* this matters for a coffee startup (e.g., higher margins imply efficient roasting or premium pricing).
+        *   Highlight 1 negative variance (concerns). Explain the risk (e.g., burn rate issues, inventory overstock).
+    3.  **Actionable Recommendation:** Provide 1 concrete, strategic step the management should take next week (e.g., "Review shipping logistics," "Push B2B sales").
 
-    Structure your response with clear headings (###).
+    Format the response in concise Markdown. Use bolding for key metrics.
     `;
 
   try {
@@ -76,9 +72,9 @@ export const getFinancialAnalysis = async (budget: FinancialData, actual: Financ
     return response.text || "No analysis generated.";
   } catch (error: any) {
     console.error("Error fetching financial analysis:", error);
-    if (error.message?.includes("API_KEY")) {
-        return "Error: Invalid or missing API Key.";
+    if (error.message?.includes("API_KEY") || error.toString().includes("API_KEY")) {
+        return "Error: Invalid or missing API Key. Please check your configuration.";
     }
-    return "An error occurred while analyzing the financial data. Please check the console for details.";
+    return "An error occurred while analyzing the financial data. Please try again later.";
   }
 };

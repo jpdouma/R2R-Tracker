@@ -2,10 +2,9 @@ import React, { useState, useCallback } from 'react';
 import { useDataContext } from '../../contexts/DataContext';
 import { DetailedFinancialData, FinancialData } from '../../types';
 import { YEARS } from '../../constants';
+import { formatCurrency } from '../../utils/dataUtils';
 
 type StatementType = 'Income Statement' | 'Balance Sheet' | 'Cash Flow';
-
-const formatCurrency = (value: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
 
 const FinancialStatementViewer: React.FC = () => {
     const { plannedBudget, setPlannedBudget } = useDataContext();
@@ -33,7 +32,6 @@ const FinancialStatementViewer: React.FC = () => {
             const CF = summary.cashFlow;
 
             // IS Recalculations
-            // FIX: Replaced 'wholesale' with 'retail' to match FinancialData type
             IS.revenue.total = IS.revenue.online + IS.revenue.retail + IS.revenue.horeca;
             IS.grossProfit = IS.revenue.total - IS.cogs;
             IS.operatingExpenses.total = Object.values(IS.operatingExpenses).reduce((s, v) => s + (typeof v === 'number' ? v : 0), 0) - IS.operatingExpenses.total;
@@ -146,17 +144,22 @@ const FinancialStatementViewer: React.FC = () => {
                 <td className={`py-1.5 px-3 ${isSub ? 'pl-6' : ''}`}>{label}</td>
                 {YEARS.map(year => {
                     let current: any = budgetToDisplay[year].summary[statement];
-                    const keys = path.split('.');
-                    for(const key of keys) { 
-                        if (current) current = current[key]; 
+                    if (path) {
+                        const keys = path.split('.');
+                        for(const key of keys) { 
+                            if (current) current = current[key]; 
+                        }
+                    } else {
+                        current = 0; // Or handle empty path specifically if needed
                     }
-                    const value = current as number;
+                    
+                    const value = typeof current === 'number' ? current : 0;
                     
                     return (
                         <td key={year} className="py-1.5 px-3 text-right">
                            {isEditing && isEditable ? (
-                                <input type="number" value={Math.round(value || 0)} onChange={e => handleChange(year, statement, path, parseFloat(e.target.value) || 0)} className="bg-brand-surface p-1 rounded-md w-full text-sm outline-none focus:ring-1 focus:ring-brand-primary text-right"/>
-                           ) : formatCurrency(value || 0)}
+                                <input type="number" value={Math.round(value)} onChange={e => handleChange(year, statement, path, parseFloat(e.target.value) || 0)} className="bg-brand-surface p-1 rounded-md w-full text-sm outline-none focus:ring-1 focus:ring-brand-primary text-right"/>
+                           ) : formatCurrency(value)}
                         </td>
                     );
                 })}
@@ -168,7 +171,6 @@ const FinancialStatementViewer: React.FC = () => {
         <tbody>
             {renderRow("Revenue", 'incomeStatement', '', false, { isHeader: true })}
             {renderRow("Sales - Online", 'incomeStatement', "revenue.online", true, { isSub: true })}
-            {/* FIX: Replaced 'wholesale' with 'retail' to match FinancialData type */}
             {renderRow("Sales - Retail", 'incomeStatement', "revenue.retail", true, { isSub: true })}
             {renderRow("Sales - HORECA", 'incomeStatement', "revenue.horeca", true, { isSub: true })}
             {renderRow("Total Revenue", 'incomeStatement', "revenue.total", false, { isBold: true })}

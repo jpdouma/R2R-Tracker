@@ -2,14 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useDataContext } from '../../contexts/DataContext';
 import { ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Bar, LabelList } from 'recharts';
 import { MONTH_NAMES } from '../../constants';
-import { getModelWeekAndYear, getQuarter } from '../../utils/dataUtils';
-
-const formatCurrency = (value: number, compact = true) => {
-    if (compact) {
-        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR', notation: 'compact' }).format(value);
-    }
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR' }).format(value);
-};
+import { getModelWeekAndYear, getQuarter, formatCurrency } from '../../utils/dataUtils';
 
 const SummaryKpi: React.FC<{ title: string; value: string; subValue?: string, subLabel?: string, colorClass?: string }> = ({ title, value, subValue, subLabel, colorClass = 'text-brand-text-primary' }) => (
     <div className="bg-gray-800/50 p-4 rounded-lg flex-1">
@@ -29,10 +22,10 @@ const CustomTooltip: React.FC<any> = ({ active, payload, label }) => {
                 <p className="font-bold text-brand-text-primary mb-2">{label}</p>
                 {payload.map((pld: any) => (
                     <p key={pld.dataKey} style={{ color: pld.fill }}>
-                        {pld.name}: {formatCurrency(pld.value, false)}
+                        {pld.name}: {formatCurrency(pld.value)}
                     </p>
                 ))}
-                <p className="font-semibold text-brand-text-primary mt-2 pt-2 border-t border-brand-border">Total Budget: {formatCurrency(totalBudget, false)}</p>
+                <p className="font-semibold text-brand-text-primary mt-2 pt-2 border-t border-brand-border">Total Budget: {formatCurrency(totalBudget)}</p>
             </div>
         );
     }
@@ -246,9 +239,9 @@ const SalesProgressCard: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <SummaryKpi title="Realized Sales" value={formatCurrency(summary.totalRealized)} colorClass="text-brand-secondary" />
-                <SummaryKpi title="Sales in Pipeline" value={formatCurrency(summary.totalPipeline)} colorClass="text-brand-accent"/>
-                <SummaryKpi title="Progress vs Budget" value={`${summary.progressVsBudget.toFixed(1)}%`} subLabel="Budget" subValue={formatCurrency(summary.totalBudget)}/>
+                <SummaryKpi title="Realized Sales" value={formatCurrency(summary.totalRealized, true)} colorClass="text-brand-secondary" />
+                <SummaryKpi title="Sales in Pipeline" value={formatCurrency(summary.totalPipeline, true)} colorClass="text-brand-accent"/>
+                <SummaryKpi title="Progress vs Budget" value={`${summary.progressVsBudget.toFixed(1)}%`} subLabel="Budget" subValue={formatCurrency(summary.totalBudget, true)}/>
             </div>
 
             <div className="flex-grow h-64">
